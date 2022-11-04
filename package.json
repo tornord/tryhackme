@@ -1,0 +1,23 @@
+{
+  "name": "tryhackme",
+  "version": "1.0.0",
+  "description": "Open source intelligence",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/tornord/tryhackme.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/tornord/tryhackme/issues"
+  },
+  "homepage": "https://github.com/tornord/tryhackme#readme",
+  "dependencies": {
+    "express": "^4.18.2"
+  }
+}
