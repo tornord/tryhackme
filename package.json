@@ -4,6 +4,7 @@
   "description": "Open source intelligence",
   "main": "index.js",
   "scripts": {
+    "server": "npx http-server public",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
