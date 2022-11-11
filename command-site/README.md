@@ -12,3 +12,4 @@ Instructions to set up on server:
 6. Restart the server to ensure it works on startup
 
 When you make the text files to store number of packets, and if the user has won, it will need to have the right permissions for the web server to read it.
+

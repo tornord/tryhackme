@@ -694,3 +694,14 @@ ncat -lvnp 4444
 -p specifies the port number that ncat will listen on
 
 ncat -lvnp 443 -c "ncat 127.0.0.1 8008"
+
+## Bzip2 / Tar
+
+Zip a nodejs directory
+```
+tar -czf x.tar.gz --exclude "node_modules" <dir>
+```
+
+-z use gzip
+-f filename
+-c create (overwrite)
